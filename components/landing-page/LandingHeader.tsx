@@ -1,4 +1,7 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
+import { SignInButton } from "@clerk/nextjs";
 import { Github } from "lucide-react";
 import Link from "next/link";
 
@@ -18,8 +21,8 @@ export default function LandingHeader() {
             <Github className="hover:text-pink-800" />
           </Link>
           <Link href="/blogs">Start reading</Link>
-          <Button className="cursor-pointer rounded-full px-10 bg-pink-800 hover:bg-neutral-800 transition-all ease-in-out">
-            Sign in
+          <Button asChild className="cursor-pointer rounded-full px-10 bg-pink-800 hover:bg-neutral-800 transition-all ease-in-out">
+            <SignInButton forceRedirectUrl={"/blogs"} />
           </Button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Input } from "../ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { SignedIn, UserButton } from "@clerk/nextjs";
 
 export default function Header() {
   return (
@@ -13,10 +14,9 @@ export default function Header() {
         </Link>
         <Input placeholder="Search" className="w-1/2" />
         <Link href={"/profile"}>
-          <Avatar>
-            <AvatarImage src="https://github.com/shadcn.png" />
-            <AvatarFallback>CN</AvatarFallback>
-          </Avatar>
+          <SignedIn>
+            <UserButton />
+          </SignedIn>
         </Link>
       </div>
     </nav>
