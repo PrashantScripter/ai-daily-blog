@@ -1,14 +1,27 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse, NextRequest } from "next/server";
 
-const isProtectedRoute = createRouteMatcher(["/blogs(.*)", "/profile(.*)"]);
+const isProtectedRoute = createRouteMatcher([
+  "/blogs(.*)",
+  "/profile(.*)",
+]);
+
+const isPublicRoute = createRouteMatcher([
+  "/",
+  "/api/webhooks(.*)", // Add this here
+]);
 
 export default clerkMiddleware(async (auth, request: NextRequest) => {
   const { isAuthenticated, userId } = await auth();
 
+  // Allow webhooks to pass through without any auth checks
+  if (isPublicRoute(request)) {
+    return NextResponse.next();
+  }
+
   // 1. Get the current path
   const { pathname } = request.nextUrl;
-  
+
   if (userId && pathname === "/") {
     return NextResponse.redirect(new URL("/blogs", request.url));
   }
