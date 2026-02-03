@@ -18,16 +18,16 @@ CREATE TABLE "users" (
 -- CreateTable
 CREATE TABLE "posts" (
     "id" TEXT NOT NULL,
-    "slug" TEXT NOT NULL,
     "title" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
     "content" TEXT NOT NULL,
+    "excerpt" TEXT NOT NULL,
+    "seoTitle" TEXT,
+    "seoDescription" TEXT,
+    "keywords" TEXT[],
     "coverImage" TEXT,
-    "publishedAt" TIMESTAMP(3),
-    "tags" TEXT[],
-    "aiModel" TEXT,
-    "aiPrompt" TEXT,
-    "tokenUsage" INTEGER,
-    "authorId" TEXT NOT NULL,
+    "publishedAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP,
+    "authorId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -47,4 +47,4 @@ CREATE UNIQUE INDEX "posts_slug_key" ON "posts"("slug");
 CREATE INDEX "posts_slug_idx" ON "posts"("slug");
 
 -- AddForeignKey
-ALTER TABLE "posts" ADD CONSTRAINT "posts_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "posts" ADD CONSTRAINT "posts_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;

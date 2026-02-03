@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -18,24 +17,35 @@ model User {
   posts     Post[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
   @@map("users")
 }
 
 model Post {
-  id          String    @id @default(cuid())
-  slug        String    @unique
-  title       String
-  content     String    @db.Text
-  coverImage  String?
-  publishedAt DateTime?
-  tags        String[]
-  aiModel     String?
-  aiPrompt    String?   @db.Text
-  tokenUsage  Int?
-  authorId    String
-  author      User      @relation(fields: [authorId], references: [id])
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id            String   @id @default(cuid())
+  
+  // 1. Core Content
+  title         String   // The H1 Header on the page
+  slug          String   @unique // The URL structure
+  content       String   @db.Text // The Markdown body
+  excerpt       String  // For blog listing cards (UI only)
+  
+  // 2. SEO Specifics (New Fields Added)
+  seoTitle      String?  // Meta Title (Browsers/Google Results)
+  seoDescription String? // Meta Description (Google Snippet)
+  keywords      String[] // For internal tagging/related posts logic
+  
+  // 3. Media & Meta
+  coverImage    String?  // Optional: You aren't generating this yet
+  publishedAt   DateTime? @default(now()) // Auto-publish immediately
+  
+  // 4. Relationships
+  // make author optional OR ensure you pass a valid ID in your API route
+  authorId      String?   
+  author        User?     @relation(fields: [authorId], references: [id])
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@index([slug])
   @@map("posts")
