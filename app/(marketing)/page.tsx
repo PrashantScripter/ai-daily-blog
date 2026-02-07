@@ -1,6 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { ArrowBigRight} from "lucide-react";
+import { SignInButton } from "@clerk/nextjs";
+import { ArrowBigRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -18,10 +19,13 @@ export default function LandingPage() {
           className="w-50 px-20 font-normal rounded-full hover:bg-pink-800 cursor-pointer text-md"
           size="lg"
         >
-          <Link href={"/blogs"} className="">
+          {/* <Link href={"/blogs"} className="">
             Start reading
             <ArrowBigRight className="" />
-          </Link>
+          </Link> */}
+          <SignInButton>
+            Start reading
+          </SignInButton>
         </Button>
       </div>
 

@@ -1,7 +1,14 @@
 import Link from "next/link";
 import { Input } from "../ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { SignedIn, UserButton } from "@clerk/nextjs";
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+} from "@clerk/nextjs";
+import { Button } from "../ui/button";
 
 export default function Header() {
   return (
@@ -13,11 +20,26 @@ export default function Header() {
           </h1>
         </Link>
         <Input placeholder="Search" className="w-1/2" />
-        <Link href={"/profile"}>
-          <SignedIn>
-            <UserButton />
-          </SignedIn>
-        </Link>
+        <SignedOut>
+          <div className="flex flex-row gap-4">
+            <Button
+              asChild
+              className="cursor-pointer rounded-full"
+              variant={"secondary"}
+            >
+              <SignInButton />
+            </Button>
+            <Button
+              asChild
+              className="cursor-pointer rounded-full px-10 bg-pink-800 hover:bg-neutral-800 transition-all ease-in-out"
+            >
+              <SignUpButton />
+            </Button>
+          </div>
+        </SignedOut>
+        <SignedIn>
+          <UserButton />
+        </SignedIn>
       </div>
     </nav>
   );

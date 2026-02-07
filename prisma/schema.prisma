@@ -8,47 +8,90 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  username  String?
-  role      UserRole @default(USER)
-  image     String?
-  clerkId   String   @unique
+  id       String   @id @default(cuid())
+  email    String   @unique
+  username String?
+  role     UserRole @default(USER)
+  image    String?
+  clerkId  String   @unique
+
+  // Relationships
   posts     Post[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  comments  Comment[]
+  likes     Like[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@map("users")
 }
 
 model Post {
-  id            String   @id @default(cuid())
-  
-  // 1. Core Content
-  title         String   // The H1 Header on the page
-  slug          String   @unique // The URL structure
-  content       String   @db.Text // The Markdown body
-  excerpt       String  // For blog listing cards (UI only)
-  
-  // 2. SEO Specifics (New Fields Added)
-  seoTitle      String?  // Meta Title (Browsers/Google Results)
-  seoDescription String? // Meta Description (Google Snippet)
-  keywords      String[] // For internal tagging/related posts logic
-  
-  // 3. Media & Meta
-  coverImage    String?  // Optional: You aren't generating this yet
-  publishedAt   DateTime? @default(now()) // Auto-publish immediately
-  
-  // 4. Relationships
-  // make author optional OR ensure you pass a valid ID in your API route
-  authorId      String?   
-  author        User?     @relation(fields: [authorId], references: [id])
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id String @id @default(cuid())
+
+  title   String
+  slug    String @unique
+  content String @db.Text
+  excerpt String
+
+  seoTitle       String
+  seoDescription String
+  keywords       String[]
+
+  coverImage  String
+  authorId String?
+
+  // Relationships
+  author   User?     @relation(fields: [authorId], references: [id])
+  comments Comment[]
+  likes    Like[]
+
+  publishedAt DateTime? @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([slug])
+  @@index([authorId])
   @@map("posts")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  comment   String
+  postId    String
+  authorId  String
+  parentId  String? // For nested comments/replies
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  post    Post      @relation(fields: [postId], references: [id])
+  author  User      @relation(fields: [authorId], references: [id])
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies Comment[] @relation("CommentReplies")
+  likes   Like[]
+
+  @@index([postId])
+  @@index([authorId])
+  @@index([parentId])
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  postId    String?
+  commentId String?
+  userId    String
+  createdAt DateTime @default(now())
+
+  // Relationships
+  post    Post?    @relation(fields: [postId], references: [id])
+  comment Comment? @relation(fields: [commentId], references: [id])
+  user    User     @relation(fields: [userId], references: [id])
+
+  // Ensure a user can only like a post or comment once
+  @@unique([userId, postId, commentId])
+  @@index([userId])
+  @@index([postId])
+  @@index([commentId])
 }
 
 enum UserRole {

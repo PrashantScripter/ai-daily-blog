@@ -1,7 +1,7 @@
 // app/blogs/[slug]/loading.tsx
 export default function Loading() {
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-6 pt-24">
       <div className="animate-pulse">
         {/* Title skeleton */}
         <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>

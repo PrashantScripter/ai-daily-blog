@@ -12,6 +12,7 @@ import { Toggle } from "@/components/ui/toggle";
 import { prisma } from "@/lib/prisma";
 import { SignedIn, UserButton } from "@clerk/nextjs";
 import { MessageCircle, ThumbsUp } from "lucide-react";
+import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 
 const mockAiContent = `
@@ -145,7 +146,22 @@ export default async function SelectedBlog({
         </div>
       </div>
 
-      <div>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <div className="relative w-full aspect-video overflow-hidden border border-border">
+            <Image
+              src={post?.coverImage as string}
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover"
+              alt={post?.title || "AI generated cover image"}
+              priority={true}
+            />
+          </div>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium px-1">
+            ✨ AI Generated
+          </p>
+        </div>
         <article className="prose prose-lg prose-slate max-w-none dark:prose-invert">
           <ReactMarkdown>{post?.content}</ReactMarkdown>
         </article>

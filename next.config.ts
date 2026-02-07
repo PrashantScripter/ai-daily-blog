@@ -6,9 +6,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "gemini.google.com",
-        port: "",
-        pathname: "/**", // Allow all paths from this host
+        hostname: "res.cloudinary.com",
       },
     ],
   },

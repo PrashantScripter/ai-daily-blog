@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     // 2. Research
     console.log("Starting Research...");
     const researchData = await performResearch(
-      "Artificial Intelligence and Web Development",
+      "Artificial Intelligence, Web Development or any trending topic around the world",
     );
 
     if (!researchData || researchData.length < 100) {
@@ -46,6 +46,7 @@ export async function GET(req: NextRequest) {
         seoTitle: blogPostData.seoTitle,
         seoDescription: blogPostData.seoDescription,
         keywords: blogPostData.keywords,
+        coverImage: blogPostData.coverImage,
       },
     });
 
