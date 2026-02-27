@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { performResearch, generateBlogPost } from "@/lib/agent";
-import { prisma } from "@/lib/prisma"; // Assumes you have a singleton prisma client setup
+import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 export const maxDuration = 60; // Set max execution time for Vercel (Pro plan allows more)
@@ -32,17 +32,15 @@ export async function GET(req: NextRequest) {
     const blogPostData = await generateBlogPost(researchData);
 
     // 4. Database Persistence
-    console.log("Saving to NeonDB...");
+    console.log("Saving to database...");
     const savedPost = await prisma.post.create({
       data: {
         title: blogPostData.title,
-        // Append timestamp to slug to guarantee uniqueness if titles repeat
         slug: `${blogPostData.slug}-${Date.now()}`,
-
+        authorId: "1",
         content: blogPostData.content,
         excerpt: blogPostData.excerpt,
-
-        // MAPPING THE NEW FIELDS:
+        readTime: blogPostData.readTime,
         seoTitle: blogPostData.seoTitle,
         seoDescription: blogPostData.seoDescription,
         keywords: blogPostData.keywords,

@@ -52,8 +52,9 @@ export async function generateBlogPost(researchContext: string) {
       "excerpt": "A short 150-character summary for the blog card.",
       "seoTitle": "SEO optimized title (under 60 chars)",
       "seoDescription": "SEO meta description (under 160 chars)",
-      "coverImage" : "A perfect detailed prompt to generate a perfect image for this blog (under 500 chars)"
-      "keywords": ["keyword1", "keyword2", "keyword3"]
+      "coverImage" : "A perfect detailed prompt to generate a perfect image for this blog (under 1000 chars)",
+      "keywords": ["keyword1", "keyword2", "keyword3"],
+      "readTime: "At a approx time in minute, which a human can take to read this blog"
     }
   `;
 
@@ -84,8 +85,6 @@ export async function generateImage(prompt: string): Promise<string> {
       image: {
         size: "square_1_1",
       },
-      // Note: 'guidance_scale' and 'styling' are often the cause of 422 validation errors
-      // on the cheapest models. Try removing them first to confirm.
       filter_nsfw: true,
     }),
   };
@@ -129,3 +128,4 @@ export async function generateImage(prompt: string): Promise<string> {
     throw error; // Rethrow so your UI can handle the error state
   }
 }
+

@@ -2,23 +2,7 @@
 import { MessageCircle, ThumbsUp } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-interface BlogCardProps {
-  post: {
-    id: string;
-    title: string;
-    slug: string;
-    content: string;
-    excerpt: string;
-    seoTitle: string | null;
-    seoDescription: string | null;
-    keywords: string[];
-    coverImage: string | null;
-    publishedAt: Date | null;
-    authorId: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-  };
-}
+import { BlogCardProps } from "@/types/type";
 
 export default function BlogCard({ post }: BlogCardProps) {
   const router = useRouter();
@@ -38,11 +22,11 @@ export default function BlogCard({ post }: BlogCardProps) {
         <div className="flex flex-row gap-4 text-sm text-neutral-800/90">
           <div className="flex flex-row gap-2 items-center ">
             <ThumbsUp className="size-4" />
-            <p>20k</p>
+            <p>{post?.likes.length}</p>
           </div>
           <div className="flex flex-row gap-2 items-center ">
             <MessageCircle className="size-4" />
-            <p>20</p>
+            <p>{post?.comments.length}</p>
           </div>
           <p className="">
             {post.publishedAt?.toLocaleDateString("en-US", {
@@ -60,6 +44,7 @@ export default function BlogCard({ post }: BlogCardProps) {
           fill
           className="object-cover"
           alt="Post related image"
+          sizes="(max-width: 768px) 100vw, 50vw"
         />
       </div>
     </div>

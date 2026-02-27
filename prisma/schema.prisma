@@ -7,15 +7,20 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id       String   @id @default(cuid())
-  email    String   @unique
-  username String?
-  role     UserRole @default(USER)
-  image    String?
-  clerkId  String   @unique
+enum UserRole {
+  ADMIN
+  AUTHOR
+  EDITOR
+  USER
+}
 
-  // Relationships
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  username  String?
+  role      UserRole  @default(USER)
+  image     String?
+  clerkId   String    @unique
   posts     Post[]
   comments  Comment[]
   likes     Like[]
@@ -26,28 +31,26 @@ model User {
 }
 
 model Post {
-  id String @id @default(cuid())
-
-  title   String
-  slug    String @unique
-  content String @db.Text
-  excerpt String
-
+  id             String    @id @default(cuid())
+  title          String
+  slug           String    @unique
+  content        String    @db.Text
+  excerpt        String
   seoTitle       String
   seoDescription String
   keywords       String[]
+  coverImage     String
+  readTime       Int
+  authorId       String
+  author         User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments       Comment[]
+  likes          Like[]
+  publishedAt    DateTime? @default(now())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  coverImage  String
-  authorId String?
-
-  // Relationships
-  author   User?     @relation(fields: [authorId], references: [id])
-  comments Comment[]
-  likes    Like[]
-
-  publishedAt DateTime? @default(now())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  likeCount    Int @default(0)
+  commentCount Int @default(0)
 
   @@index([slug])
   @@index([authorId])
@@ -55,24 +58,25 @@ model Post {
 }
 
 model Comment {
-  id        String   @id @default(cuid())
-  comment   String
-  postId    String
-  authorId  String
-  parentId  String? // For nested comments/replies
+  id       String  @id @default(cuid())
+  comment  String
+  postId   String
+  userId   String
+  parentId String?
+
+  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentToComment", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies Comment[] @relation("CommentToComment")
+
+  likes     Like[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relationships
-  post    Post      @relation(fields: [postId], references: [id])
-  author  User      @relation(fields: [authorId], references: [id])
-  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
-  replies Comment[] @relation("CommentReplies")
-  likes   Like[]
-
+  @@index([postId, userId])
+  @@index([userId])
   @@index([postId])
-  @@index([authorId])
-  @@index([parentId])
+  @@map("comments")
 }
 
 model Like {
@@ -82,20 +86,12 @@ model Like {
   userId    String
   createdAt DateTime @default(now())
 
-  // Relationships
-  post    Post?    @relation(fields: [postId], references: [id])
-  comment Comment? @relation(fields: [commentId], references: [id])
-  user    User     @relation(fields: [userId], references: [id])
+  post    Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  comment Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Ensure a user can only like a post or comment once
-  @@unique([userId, postId, commentId])
-  @@index([userId])
-  @@index([postId])
-  @@index([commentId])
-}
-
-enum UserRole {
-  ADMIN
-  EDITOR
-  USER
+  // Prevents duplicate likes
+  @@unique([userId, postId])
+  @@unique([userId, commentId])
+  @@map("likes")
 }
