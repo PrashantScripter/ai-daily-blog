@@ -7,10 +7,10 @@ export const maxDuration = 60; // Set max execution time for Vercel (Pro plan al
 
 export async function GET(req: NextRequest) {
   // 1. Security Check
-  // const authHeader = req.headers.get("authorization");
-  // if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-  //   return new NextResponse("Unauthorized", { status: 401 });
-  // }
+  const authHeader = req.headers.get("authorization");
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
 
   try {
     // 2. Research
