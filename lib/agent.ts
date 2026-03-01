@@ -5,7 +5,15 @@ import { jsonrepair } from "jsonrepair";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 // 1. Research Phase
-export async function performResearch(topic: string) {
+export async function performResearch() {
+  const today = new Date().toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  const query = `most viral reddit threads OR hacker news OR product hunt launches OR x controversies frustrations in AI, web development, indie hacking, remote work, creator tools last 7 days ${today}`;
+
   const response = await fetch("https://api.tavily.com/search", {
     method: "POST",
     headers: {
@@ -13,10 +21,10 @@ export async function performResearch(topic: string) {
     },
     body: JSON.stringify({
       api_key: process.env.TAVILY_API_KEY,
-      query: `latest trending news and deep technical analysis in ${topic}`,
-      search_depth: "advanced",
+      query: query,
       include_answer: true,
-      max_results: 5,
+      max_results: 10,
+      include_images: false,
     }),
   });
 
@@ -34,29 +42,51 @@ export async function performResearch(topic: string) {
 export async function generateBlogPost(researchContext: string) {
   const model = genAI.getGenerativeModel({
     model: "gemini-3-flash-preview",
-    generationConfig: { responseMimeType: "application/json" },
+    generationConfig: {
+      responseMimeType: "application/json",
+      temperature: 0.75,
+      maxOutputTokens: 12000,
+    },
+  });
+
+  const today = new Date().toLocaleDateString("en-US", {
+    year: "numeric",
   });
 
   const prompt = `
-    You are a Senior Tech Journalist and SEO Expert. 
-    Using the provided research context below, write a comprehensive, long-form blog post (1500+ words).
-    
-    RESEARCH CONTEXT:
-    ${researchContext}
+      You are a Senior Tech Journalist and Viral Content Strategist in ${today}.
+      Write a long-form blog post (1600–2200 words) that feels human, opinionated, and highly shareable.
 
-    STRICT OUTPUT FORMAT (JSON ONLY):
-    {
-      "title": "Catchy, click-worthy H1 title",
-      "slug": "url-friendly-kebab-case-slug",
-      "content": "Full blog post in Markdown format. Use H2, H3, lists, and code blocks where necessary. Do NOT include the title in the body.",
-      "excerpt": "A short 150-character summary for the blog card.",
-      "seoTitle": "SEO optimized title (under 60 chars)",
-      "seoDescription": "SEO meta description (under 160 chars)",
-      "coverImage" : "A perfect detailed prompt to generate a perfect image for this blog (under 1000 chars)",
-      "keywords": ["keyword1", "keyword2", "keyword3"],
-      "readTime: "At a approx time in minute, which a human can take to read this blog"
-    }
-  `;
+      RESEARCH CONTEXT:
+      ${researchContext}
+
+      Rules for maximum virality:
+      - Raw, conversational tone like a smart, slightly pissed-off friend.
+      - Strong emotional triggers (FOMO, anger, awe, relatability, controversy).
+      - One bold contrarian opinion + one surprising prediction.
+      - Use storytelling and concrete examples. Avoid repetition.
+      - Markdown: H2/H3, numbered lists, blockquotes, code blocks if needed.
+      - End with a strong CTA + open discussion question.
+      - Never sound corporate or AI-generated.
+
+      READ TIME CALCULATION:
+      - Calculate "readTime" = Math.ceil(total words in "content" / 225)
+      - Return as integer only.
+
+      STRICT OUTPUT FORMAT — JSON ONLY (no extra text, no markdown fences):
+
+      {
+        "title": "Catchy, curiosity-gap H1 title",
+        "slug": "url-friendly-kebab-case-slug",
+        "content": "Full blog post in Markdown format. Do NOT repeat the title.",
+        "excerpt": "150-character teaser for the blog card",
+        "seoTitle": "SEO title under 60 chars",
+        "seoDescription": "Meta description under 160 chars",
+        "coverImage": "EXTREMELY detailed image generation prompt for a viral tech blog thumbnail (bold typography, cinematic lighting, futuristic/tech aesthetic, high contrast, text overlay ideas). Max 800 characters.",
+        "keywords": ["keyword1", "keyword2", "keyword3", "keyword4"],
+        "readTime": <number>
+      }
+      `;
 
   const result = await model.generateContent(prompt);
   const responseText = result.response.text();
@@ -72,6 +102,8 @@ export async function generateBlogPost(researchContext: string) {
 }
 
 export async function generateImage(prompt: string): Promise<string> {
+  const enhancedPrompt = `${prompt}. Style: bold viral tech blog thumbnail, dramatic lighting, high contrast, modern sans-serif text overlay, futuristic or cinematic vibe, 1:1 square, professional, no blurry, no text errors`;
+
   const options = {
     method: "POST",
     headers: {
@@ -79,12 +111,11 @@ export async function generateImage(prompt: string): Promise<string> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      prompt: prompt,
-      negative_prompt: "blurry, ugly, watermark",
+      prompt: enhancedPrompt,
+      negative_prompt:
+        "blurry, low quality, watermark, text errors, deformed, ugly, cartoonish",
       num_images: 1,
-      image: {
-        size: "square_1_1",
-      },
+      image: { size: "square_1_1" },
       filter_nsfw: true,
     }),
   };
@@ -128,4 +159,3 @@ export async function generateImage(prompt: string): Promise<string> {
     throw error; // Rethrow so your UI can handle the error state
   }
 }
-

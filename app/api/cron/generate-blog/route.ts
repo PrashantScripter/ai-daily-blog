@@ -15,9 +15,7 @@ export async function GET(req: NextRequest) {
   try {
     // 2. Research
     console.log("Starting Research...");
-    const researchData = await performResearch(
-      "Artificial Intelligence, Web Development or any trending topic around the world",
-    );
+    const researchData = await performResearch();
 
     if (!researchData || researchData.length < 100) {
       console.warn("Insufficient research data found.");
