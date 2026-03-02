@@ -13,27 +13,22 @@ import { Button } from "../ui/button";
 export default function Header() {
   return (
     <nav className="fixed w-full border-b border-neutral-800/20 bg-white z-50">
-      <div className="flex flex-row justify-between items-center py-4 max-w-[80%] m-auto">
+      <div className="flex flex-row justify-between items-center py-4 px-4 sm:px-0 w-full sm:max-w-[80%] m-auto">
         <Link href="/blogs">
-          <h1 className="text-3xl font-semibold text-pink-800">
+          <h1 className="text-xl sm:text-2xl font-semibold text-pink-800">
             Agent Blogger
           </h1>
         </Link>
-        <Input placeholder="Search" className="w-1/2" />
+        <Input placeholder="Search" className="hidden sm:flex w-1/2" />
         <SignedOut>
           <div className="flex flex-row gap-4">
             <Button
               asChild
-              className="cursor-pointer rounded-full"
+              className="cursor-pointer rounded-full px-4"
               variant={"secondary"}
+              size={"sm"}
             >
               <SignInButton />
-            </Button>
-            <Button
-              asChild
-              className="cursor-pointer rounded-full px-10 bg-pink-800 hover:bg-neutral-800 transition-all ease-in-out"
-            >
-              <SignUpButton />
             </Button>
           </div>
         </SignedOut>

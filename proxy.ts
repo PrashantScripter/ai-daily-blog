@@ -3,7 +3,7 @@ import { NextResponse, NextRequest } from "next/server";
 
 const isProtectedRoute = createRouteMatcher([
   "/profile(.*)",
-  "/blogs(.*)"
+  // "/blogs(.*)"
 ]);
 
 const isPublicRoute = createRouteMatcher([

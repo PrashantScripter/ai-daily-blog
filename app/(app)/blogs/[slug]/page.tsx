@@ -121,12 +121,12 @@ export default async function SelectedBlog({
     : false;
 
   return (
-    <div className="flex flex-col gap-10 py-26 pb-20 max-w-[50%] m-auto">
+    <div className="flex flex-col gap-10 py-26 pb-20 px-4 lg:px-0 w-dvw lg:max-w-[50%] m-auto">
       <div className="flex flex-col gap-4">
-        <h1 className="text-4xl/relaxed font-bold -tracking-normal">
+        <h1 className="text-2xl lg:text-4xl/relaxed font-semibold lg:font-bold -tracking-normal">
           {post?.title}
         </h1>
-        <p className="text-xl">{post?.seoDescription}</p>
+        <p className="text-lg lg:text-xl">{post?.seoDescription}</p>
         <div className="flex flex-row gap-6 items-center">
           <div className="flex flex-row gap-2 items-center">
             {post?.author?.image ? (

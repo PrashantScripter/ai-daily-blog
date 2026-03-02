@@ -52,10 +52,8 @@ export default async function Blogs() {
     );
   }
 
-  console.log(posts);
-
   return (
-    <div className="grid grid-cols-1 gap-x-10 pt-24 max-w-[80%] m-auto">
+    <div className="grid grid-cols-1 gap-x-10 pt-24 px-4 sm:px-0 w-full sm:max-w-[80%] m-auto">
       {posts.map((post) => (
         <BlogCard key={post.id} post={post} />
       ))}
