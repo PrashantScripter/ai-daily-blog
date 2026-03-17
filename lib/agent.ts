@@ -12,13 +12,11 @@ export async function performResearch() {
     year: "numeric",
   });
 
-  const query = `most viral reddit threads OR hacker news OR product hunt launches OR x controversies frustrations in AI, web development, indie hacking, remote work, creator tools last 7 days ${today}`;
+  const query = `must-know trending global news events innovations last 7 days as of ${today} in AI/tech, politics, economy, science, health, environment, education, business + India breakthroughs; include reddit viral, hacker news, product hunt, x controversies for students & professionals`;
 
   const response = await fetch("https://api.tavily.com/search", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       api_key: process.env.TAVILY_API_KEY,
       query: query,
@@ -33,9 +31,16 @@ export async function performResearch() {
   }
 
   const data = await response.json();
-  return data.results
-    .map((r: any) => `Source: ${r.title}\nContent: ${r.content}\nURL: ${r.url}`)
-    .join("\n\n");
+
+  // Optional but recommended: return the AI summary first
+
+  return (
+    data.results
+      .map(
+        (r: any) => `Source: ${r.title}\nContent: ${r.content}\nURL: ${r.url}`,
+      )
+      .join("\n\n")
+  );
 }
 
 // 2. Drafting Phase (Prompt Engineering)
