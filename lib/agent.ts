@@ -1,10 +1,10 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { uploadImageBuffer } from "./cloudinary";
 import { jsonrepair } from "jsonrepair";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-// 1. Research Phase
+// 1. Research Phase (unchanged)
 export async function performResearch() {
   const today = new Date().toLocaleDateString("en-US", {
     month: "short",
@@ -32,9 +32,8 @@ export async function performResearch() {
 
   const data = await response.json();
 
-  // Optional but recommended: return the AI summary first
-
   return (
+    (data.answer ? `SUMMARY: ${data.answer}\n\n` : "") +
     data.results
       .map(
         (r: any) => `Source: ${r.title}\nContent: ${r.content}\nURL: ${r.url}`,
@@ -43,65 +42,170 @@ export async function performResearch() {
   );
 }
 
-// 2. Drafting Phase (Prompt Engineering)
+// NEW: Tavily Tool Helper
+async function tavilyToolCall(
+  searchQuery: string,
+  numDays = 7,
+): Promise<string> {
+  const today = new Date().toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  const response = await fetch("https://api.tavily.com/search", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      api_key: process.env.TAVILY_API_KEY,
+      query: `${searchQuery} last ${numDays} days as of ${today}`,
+      include_answer: true,
+      max_results: 5,
+      include_images: false,
+    }),
+  });
+
+  if (!response.ok)
+    throw new Error(`Tavily tool error: ${response.statusText}`);
+
+  const data = await response.json();
+  return (
+    (data.answer ? `SUMMARY: ${data.answer}\n\n` : "") +
+    data.results
+      .map(
+        (r: any) => `Source: ${r.title}\nContent: ${r.content}\nURL: ${r.url}`,
+      )
+      .join("\n\n")
+  );
+}
+
+// 2. Drafting Phase (FIXED - now compiles perfectly)
 export async function generateBlogPost(researchContext: string) {
   const model = genAI.getGenerativeModel({
     model: "gemini-3-flash-preview",
+    tools: [
+      {
+        functionDeclarations: [
+          {
+            name: "tavily_search",
+            description:
+              "Search Tavily for ONE critical missing fact ONLY if the initial research context is insufficient. Use at most once.",
+            parameters: {
+              type: SchemaType.OBJECT, // ← This was the error (string "object" is invalid)
+              properties: {
+                query: {
+                  type: SchemaType.STRING,
+                  description:
+                    "Precise search query for latest verified news/facts",
+                },
+                num_days: {
+                  type: SchemaType.INTEGER,
+                  description: "Days back (default 7)",
+                },
+              },
+              required: ["query"],
+            },
+          },
+        ],
+      },
+    ],
     generationConfig: {
-      responseMimeType: "application/json",
       temperature: 0.75,
       maxOutputTokens: 12000,
     },
   });
 
-  const today = new Date().toLocaleDateString("en-US", {
-    year: "numeric",
-  });
+  const chat = model.startChat();
 
-  const prompt = `
-      You are a Senior Tech Journalist and Viral Content Strategist in ${today}.
-      Write a long-form blog post (1600–2200 words) that feels human, opinionated, and highly shareable.
+  const fullPrompt = `
+You are a battle-hardened senior tech journalist in 2026 — think Ben Thompson mixed with Casey Newton and a little spite. You’ve covered AI since GPT-3 and you hate hype.
 
-      RESEARCH CONTEXT:
-      ${researchContext}
+Write a long-form blog post (exactly 1600–2200 words) that feels 100% human: raw, conversational, sarcastic, like you’re venting to a smart friend over drinks at 1 a.m.
 
-      Rules for maximum virality:
-      - Raw, conversational tone like a smart, slightly pissed-off friend.
-      - Strong emotional triggers (FOMO, anger, awe, relatability, controversy).
-      - One bold contrarian opinion + one surprising prediction.
-      - Use storytelling and concrete examples. Avoid repetition.
-      - Markdown: H2/H3, numbered lists, blockquotes, code blocks if needed.
-      - End with a strong CTA + open discussion question.
-      - Never sound corporate or AI-generated.
+RESEARCH CONTEXT — THIS IS YOUR PRIMARY SOURCE OF TRUTH:
+${researchContext}
 
-      READ TIME CALCULATION:
-      - Calculate "readTime" = Math.ceil(total words in "content" / 225)
-      - Return as integer only.
+TRUTH & TRUST RULES (NON-NEGOTIABLE):
+- Every claim must be grounded in the RESEARCH CONTEXT above OR in fresh data you pull via the tavily_search tool.
+- You may call the tool ONLY if the initial context is missing a critical, verifiable fact you need for a strong claim. Use it at most ONCE.
+- After getting the tool result, incorporate ONLY the new verified facts. Cite naturally. Never invent, extrapolate, or add “probably/likely/experts say”.
+- This blog must remain 100% trustable — every reader must be able to verify every claim.
 
-      STRICT OUTPUT FORMAT — JSON ONLY (no extra text, no markdown fences):
+TOOL AVAILABLE:
+You have access to "tavily_search". Call it only when absolutely necessary.
 
-      {
-        "title": "Catchy, curiosity-gap H1 title",
-        "slug": "url-friendly-kebab-case-slug",
-        "content": "Full blog post in Markdown format. Do NOT repeat the title.",
-        "excerpt": "150-character teaser for the blog card",
-        "seoTitle": "SEO title under 60 chars",
-        "seoDescription": "Meta description under 160 chars",
-        "coverImage": "EXTREMELY detailed image generation prompt for a viral tech blog thumbnail (bold typography, cinematic lighting, futuristic/tech aesthetic, high contrast, text overlay ideas). Max 800 characters.",
-        "keywords": ["keyword1", "keyword2", "keyword3", "keyword4"],
-        "readTime": <number>
+HUMAN-WRITING RULES (follow religiously):
+- Tone: raw, slightly pissed-off, funny. Use contractions, occasional “fuck”, “this shit”, “honestly”, “look”, “anyway”. Mix one-sentence zingers with longer rants.
+- Vary rhythm wildly. Throw in random asides and one tiny personal tangent.
+- One big contrarian hot take + one “mark my words” prediction (only if grounded).
+- Never use LLM red flags.
+- End with strong CTA + discussion question.
+
+When you have everything you need and are ready to write the final blog, output ONLY the JSON object below. Nothing else.
+
+READ TIME: Calculate "readTime" = Math.ceil(total words in content / 225)
+
+STRICT JSON ONLY:
+
+{
+  "title": "...",
+  "slug": "...",
+  "content": "Full Markdown blog post...",
+  "excerpt": "...",
+  "seoTitle": "...",
+  "seoDescription": "...",
+  "coverImage": "EXTREMELY detailed image prompt...",
+  "keywords": ["...", "..."],
+  "readTime": <number>
+}
+`;
+
+  let result = await chat.sendMessage(fullPrompt);
+  let finalText = "";
+
+  // Tool-calling loop
+  while (true) {
+    const functionCalls = result.response.functionCalls?.() || [];
+
+    if (functionCalls.length > 0) {
+      const toolResponses: any[] = [];
+
+      for (const call of functionCalls) {
+        if (call.name === "tavily_search") {
+          const args = call.args as { query: string; num_days?: number };
+          const extraInfo = await tavilyToolCall(
+            args.query,
+            args.num_days || 7,
+          );
+
+          toolResponses.push({
+            functionResponse: {
+              name: call.name,
+              response: { result: extraInfo },
+            },
+          });
+        }
       }
-      `;
 
-  const result = await model.generateContent(prompt);
-  const responseText = result.response.text();
+      result = await chat.sendMessage(toolResponses);
+    } else {
+      finalText = result.response.text();
+      break;
+    }
+  }
 
-  // Clean potential markdown code fences from JSON response
-  const cleanJson = responseText.replace(/```json|```/g, "").trim();
-
+  // Clean JSON
+  const cleanJson = finalText.replace(/```json|```/g, "").trim();
   const resultJson = await JSON.parse(jsonrepair(cleanJson));
+
+  // Generate & upload cover image
   const uploadedImageUrl = await generateImage(resultJson.coverImage);
   resultJson.coverImage = uploadedImageUrl;
+
+  // Safety strip
+  resultJson.content = resultJson.content
+    .replace(/✨ AI Generated|AI Generated/gi, "")
+    .trim();
 
   return resultJson;
 }
@@ -140,18 +244,14 @@ export async function generateImage(prompt: string): Promise<string> {
 
     const result = await response.json();
 
-    // Freepik's 'classic-fast' returns an array in 'data'
-    // Each object has a 'base64' property
     const base64Image = result.data[0].base64;
 
     if (!base64Image) {
       throw new Error("No base64 data received from Freepik");
     }
 
-    // Convert Base64 string to Buffer
     const imageBuffer = Buffer.from(base64Image, "base64");
 
-    // Upload to Cloudinary using your existing function
     const imageUrl = await uploadImageBuffer(imageBuffer, {
       folder: "freepik-generations",
       tags: ["ai", "freepik"],
@@ -161,6 +261,6 @@ export async function generateImage(prompt: string): Promise<string> {
     return imageUrl;
   } catch (error) {
     console.error("Workflow failed:", error);
-    throw error; // Rethrow so your UI can handle the error state
+    throw error;
   }
 }
