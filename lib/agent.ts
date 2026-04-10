@@ -210,51 +210,115 @@ STRICT JSON ONLY:
   return resultJson;
 }
 
+// export async function generateImage(prompt: string): Promise<string> {
+//   const enhancedPrompt = `${prompt}. Style: bold viral tech blog thumbnail, dramatic lighting, high contrast, modern sans-serif text overlay, futuristic or cinematic vibe, 1:1 square, professional, no blurry, no text errors`;
+
+//   const options = {
+//     method: "POST",
+//     headers: {
+//       "x-freepik-api-key": process.env.FREEPIK_API_KEY as string,
+//       "Content-Type": "application/json",
+//     },
+//     body: JSON.stringify({
+//       prompt: enhancedPrompt,
+//       negative_prompt:
+//         "blurry, low quality, watermark, text errors, deformed, ugly, cartoonish",
+//       num_images: 1,
+//       image: { size: "square_1_1" },
+//       filter_nsfw: true,
+//     }),
+//   };
+
+//   try {
+//     const response = await fetch(
+//       "https://api.freepik.com/v1/ai/text-to-image",
+//       options,
+//     );
+
+//     if (!response.ok) {
+//       const errorData = await response.json();
+//       throw new Error(
+//         `Freepik API Error: ${errorData.message || response.statusText}`,
+//       );
+//     }
+
+//     const result = await response.json();
+
+//     const base64Image = result.data[0].base64;
+
+//     if (!base64Image) {
+//       throw new Error("No base64 data received from Freepik");
+//     }
+
+//     const imageBuffer = Buffer.from(base64Image, "base64");
+
+//     const imageUrl = await uploadImageBuffer(imageBuffer, {
+//       folder: "freepik-generations",
+//       tags: ["ai", "freepik"],
+//     });
+
+//     console.log("Uploaded successfully! URL:", imageUrl);
+//     return imageUrl;
+//   } catch (error) {
+//     console.error("Workflow failed:", error);
+//     throw error;
+//   }
+// }
+
 export async function generateImage(prompt: string): Promise<string> {
   const enhancedPrompt = `${prompt}. Style: bold viral tech blog thumbnail, dramatic lighting, high contrast, modern sans-serif text overlay, futuristic or cinematic vibe, 1:1 square, professional, no blurry, no text errors`;
 
-  const options = {
-    method: "POST",
-    headers: {
-      "x-freepik-api-key": process.env.FREEPIK_API_KEY as string,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      prompt: enhancedPrompt,
-      negative_prompt:
-        "blurry, low quality, watermark, text errors, deformed, ugly, cartoonish",
-      num_images: 1,
-      image: { size: "square_1_1" },
-      filter_nsfw: true,
-    }),
+  const invokeUrl =
+    "https://ai.api.nvidia.com/v1/genai/stabilityai/stable-diffusion-3-medium";
+
+  const headers = {
+    Authorization: `Bearer ${process.env.NVIDIA_API_KEY as string}`,
+    Accept: "application/json",
+  };
+
+  const payload = {
+    prompt: enhancedPrompt,
+    cfg_scale: 5,
+    aspect_ratio: "1:1", // Changed from 16:9 to 1:1 square
+    seed: 0,
+    steps: 50,
+    negative_prompt:
+      "blurry, low quality, watermark, text errors, deformed, ugly, cartoonish",
   };
 
   try {
-    const response = await fetch(
-      "https://api.freepik.com/v1/ai/text-to-image",
-      options,
-    );
+    const response = await fetch(invokeUrl, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: { "Content-Type": "application/json", ...headers },
+    });
 
-    if (!response.ok) {
-      const errorData = await response.json();
+    if (response.status != 200) {
+      let errBody = await (await response.blob()).text();
       throw new Error(
-        `Freepik API Error: ${errorData.message || response.statusText}`,
+        `NVIDIA API invocation failed with status ${response.status}: ${errBody}`,
       );
     }
 
-    const result = await response.json();
+    const response_body = await response.json();
 
-    const base64Image = result.data[0].base64;
+    // Extract base64 image from NVIDIA response
+    // Note: Adjust this based on actual NVIDIA API response structure
+    const base64Image =
+      response_body.image ||
+      response_body.images?.[0] ||
+      response_body.data?.[0];
 
     if (!base64Image) {
-      throw new Error("No base64 data received from Freepik");
+      throw new Error("No image data received from NVIDIA API");
     }
 
+    // If the image is already base64 string, use it directly
     const imageBuffer = Buffer.from(base64Image, "base64");
 
     const imageUrl = await uploadImageBuffer(imageBuffer, {
-      folder: "freepik-generations",
-      tags: ["ai", "freepik"],
+      folder: "nvidia-generations",
+      tags: ["ai", "nvidia", "stable-diffusion"],
     });
 
     console.log("Uploaded successfully! URL:", imageUrl);
